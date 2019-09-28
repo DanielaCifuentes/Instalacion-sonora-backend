@@ -4,12 +4,13 @@ import random
 # Information for spacebrew
 app_name = "Backend"
 description = "This app receives, processes and sends command back and forth between devices."
-server = "192.168.0.10"
+server = "192.168.100.100"
+port = 6545
 dead = False
 
 # Create a spacebrew client instance
 brew = Spacebrew(app_name, description=description, server=server)
-client = udp_client.SimpleUDPClient(server,6545)
+client = udp_client.SimpleUDPClient(server,port)
 # Add the basic pub/subs
 brew.addPublisher("Send Command", "string")
 brew.addSubscriber("Receive Command", "string")
@@ -66,12 +67,24 @@ def commandHandler(command):
 
     if trigger == "skip_button_pressed":
         random_frequency()
+    elif trigger == "id_requested":
+        # TODO: assign and send the id to the device
+        _ = 0 # toy command
+    else:
+        unknown_command(id)
 
 
 brew.subscribe("Receive Command", commandHandler)
 
 brew.start()
 
+print("Server started!")
+print("Spacebrew server listening at {0}".format(server))
+print("OSC server using port {0}".format(port))
+
 def random_frequency():
     freq = random.randint(20,20000)
     client.send_message("/freq",freq)
+
+def unknown_command(device_id):
+    brew.publish("Send Command", "{0}:unknown_command".format(device_id))
