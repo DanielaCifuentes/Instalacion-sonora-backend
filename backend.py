@@ -1,14 +1,15 @@
 from libs.pySpacebrew.spacebrew import Spacebrew
-
+from pythonosc import udp_client
+import random
 # Information for spacebrew
 app_name = "Backend"
 description = "This app receives, processes and sends command back and forth between devices."
-server = "192.168.1.108"
+server = "192.168.0.10"
 dead = False
 
 # Create a spacebrew client instance
 brew = Spacebrew(app_name, description=description, server=server)
-
+client = udp_client.SimpleUDPClient(server,6545)
 # Add the basic pub/subs
 brew.addPublisher("Send Command", "string")
 brew.addSubscriber("Receive Command", "string")
@@ -63,17 +64,14 @@ def commandHandler(command):
             key_value_arg = argument.split("=") #=> ["time", "19.78"]
             args[key_value_arg[0]] = key_value_arg[1]
 
-
-
-    print("id: " + str(id))
-    print("triggered_action: " + trigger)
-    print("args: ")
-    print(args)
-
-
-
+    if trigger == "skip_button_pressed":
+        random_frequency()
 
 
 brew.subscribe("Receive Command", commandHandler)
 
 brew.start()
+
+def random_frequency():
+    freq = random.randint(20,20000)
+    client.send_message("/freq",freq)
