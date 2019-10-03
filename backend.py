@@ -1,10 +1,14 @@
 from libs.pySpacebrew.spacebrew import Spacebrew
 from pythonosc import udp_client
 import random
+import time
+
+######################### SPACEBREW CONFIGURATION ##########################################
+
 # Information for spacebrew
 app_name = "Backend"
 description = "This app receives, processes and sends command back and forth between devices."
-server = "192.168.100.100"
+server = "192.168.0.7"
 port = 6545
 dead = False
 
@@ -14,6 +18,9 @@ client = udp_client.SimpleUDPClient(server,port)
 # Add the basic pub/subs
 brew.addPublisher("Send Command", "string")
 brew.addSubscriber("Receive Command", "string")
+
+
+##################### COMMAND HANDLER ##################################
 
 # Receive commmands and process them
 def commandHandler(command):
@@ -65,26 +72,45 @@ def commandHandler(command):
             key_value_arg = argument.split("=") #=> ["time", "19.78"]
             args[key_value_arg[0]] = key_value_arg[1]
 
+
+    ################## ADD YOUR OWN COMMANDS HERE ########################
     if trigger == "skip_button_pressed":
-        random_frequency()
+        trigger_arp3()
     elif trigger == "id_requested":
         # TODO: assign and send the id to the device
         _ = 0 # toy command
+    elif trigger == "seekbar_changed":
+        change_a3feedback(int(args["progress"]))
     else:
-        unknown_command(id)
+        unknown_command(id, command)
 
 
 brew.subscribe("Receive Command", commandHandler)
-
 brew.start()
 
 print("Server started!")
 print("Spacebrew server listening at {0}".format(server))
 print("OSC server using port {0}".format(port))
 
-def random_frequency():
-    freq = random.randint(20,20000)
-    client.send_message("/freq",freq)
 
-def unknown_command(device_id):
+######################### FUNCTIONS #####################################
+
+def trigger_arp3():
+    val = 1
+    client.send_message("/arp3",val)
+
+def change_a3feedback(progress_val):
+    '''
+    This function receives an int between 0 and 255.
+    It sends this value to pure data to change feedback percentage on arp3.
+    It returns nothing
+    '''
+    max_input = 255.0
+    max_output = 0.9
+    feedback = progress_val/max_input*max_output
+    print(feedback)
+    client.send_message("/a3feedback",feedback)
+
+def unknown_command(device_id, command):
+    print("Received unknown command: " + command)
     brew.publish("Send Command", "{0}:unknown_command".format(device_id))
