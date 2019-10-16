@@ -8,9 +8,13 @@ import time
 # Information for spacebrew
 app_name = "Backend"
 description = "This app receives, processes and sends command back and forth between devices."
-server = "192.168.0.7"
-port = 6545
+server = "192.168.43.251"
+port = 6544
 dead = False
+
+max_num_devices = 8
+devices_list = []
+alive_devices = []
 
 # Create a spacebrew client instance
 brew = Spacebrew(app_name, description=description, server=server)
@@ -55,7 +59,14 @@ def commandHandler(command):
     assert len(command_list) < 4, "Malformed command. Too many values"
 
     # Get the id
-    id = int(command_list[0])
+    #id = int(command_list[0])
+    try:
+        id = devices_list.index(command_list[0])
+    except ValueError:
+        devices_list.append(command_list[0])
+        alive_devices.append(True)
+        id = len(devices_list) - 1
+        print("New device No. {}".format(id))
 
     # Get the triggered_action
     trigger = command_list[1]
@@ -81,6 +92,8 @@ def commandHandler(command):
         _ = 0 # toy command
     elif trigger == "seekbar_changed":
         change_a3feedback(int(args["progress"]))
+    elif trigger == "ping":
+        alive_devices[id] = True
     else:
         unknown_command(id, command)
 
@@ -111,6 +124,30 @@ def change_a3feedback(progress_val):
     print(feedback)
     client.send_message("/a3feedback",feedback)
 
-def unknown_command(device_id, command):
+def unknown_command(id, command):
     print("Received unknown command: " + command)
+    device_id = devices_list[id]
     brew.publish("Send Command", "{0}:unknown_command".format(device_id))
+
+def send_ping(id):
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:ping".format(device_id))
+    alive_devices[id] = False
+
+
+
+while True:
+    temp_devices = []
+    temp_dev_state = []
+    for device_idx in range(len(devices_list)):
+        if alive_devices[device_idx]:
+            # Device was alive, check again
+            temp_devices.append(devices_list[device_idx])
+            temp_dev_state.append(False)
+            send_ping(device_idx)
+        else:
+            print("Device {} unresponsive. Removed".format(device_idx))
+
+    devices_list = temp_devices
+    alive_devices = temp_dev_state
+    time.sleep(5)
