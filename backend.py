@@ -87,11 +87,14 @@ def commandHandler(command):
     ################## ADD YOUR OWN COMMANDS HERE ########################
     if trigger == "skip_button_pressed":
         trigger_arp3()
-    elif trigger == "id_requested":
-        # TODO: assign and send the id to the device
-        _ = 0 # toy command
     elif trigger == "seekbar_changed":
-        change_a3feedback(int(args["progress"]))
+        if id % max_num_devices == 0:
+            change_videospeed(id, int(args["progress"]))
+        elif id % max_num_devices == 1:
+
+            change_contrast(id, int(args["progress"]))
+        else:
+            change_a3feedback(int(args["progress"]))
     elif trigger == "ping":
         alive_devices[id] = True
     else:
@@ -123,6 +126,16 @@ def change_a3feedback(progress_val):
     feedback = progress_val/max_input*max_output
     print(feedback)
     client.send_message("/a3feedback",feedback)
+
+def change_videospeed(id, seekbar_val):
+    speed = seekbar_val / 255.0 * 1.8 + 0.1
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:change_video_speed:speed={1}".format(device_id, speed))
+
+def change_contrast(id, seekbar_val):
+    contrast_val = seekbar_val / 255.0 * 10 - 5
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:apply_contrast:value={1},time=0".format(device_id, contrast_val))
 
 def unknown_command(id, command):
     print("Received unknown command: " + command)
