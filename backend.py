@@ -91,8 +91,19 @@ def commandHandler(command):
         if id % max_num_devices == 0:
             change_videospeed(id, int(args["progress"]))
         elif id % max_num_devices == 1:
-
             change_contrast(id, int(args["progress"]))
+        elif id % max_num_devices == 2:
+            change_brightness(id, int(args["progress"]))
+        elif id % max_num_devices == 3:
+            change_exposure(id, int(args["progress"]))
+        elif id % max_num_devices == 4:
+            change_blur(id, int(args["progress"]))
+        elif id % max_num_devices == 5:
+            change_rgb(id, int(args["progress"]))
+        elif id % max_num_devices == 6:
+            change_halftone(id, int(args["progress"]))
+        elif id % max_num_devices == 7:
+            change_solarize(id, int(args["progress"]))
         else:
             change_a3feedback(int(args["progress"]))
     elif trigger == "ping":
@@ -136,6 +147,36 @@ def change_contrast(id, seekbar_val):
     contrast_val = seekbar_val / 255.0 * 10 - 5
     device_id = devices_list[id]
     brew.publish("Send Command", "{0}:apply_contrast:value={1},time=0".format(device_id, contrast_val))
+
+def change_brightness(id, seekbar_val):
+    brightness_val = seekbar_val/ 255.0 * 4 - 2
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:apply_brightness:value={1},time=0".format(device_id, brightness_val))
+
+def change_exposure(id, seekbar_val):
+    exposure_val = seekbar_val/ 255.0 * 4 - 2
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:apply_exposure:value={1},time=0".format(device_id, exposure_val))
+
+def change_blur(id, seekbar_val):
+    blur_val = seekbar_val/ 255.0
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:apply_blur:value={1},time=0".format(device_id, blur_val))
+
+def change_rgb(id, seekbar_val):
+    rgb_val = seekbar_val/ 255.0 * 3
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:apply_rgb:value={1},time=1".format(device_id, rgb_val))
+
+def change_halftone(id, seekbar_val):
+    halftone_val = seekbar_val/ 255.0 / 50 + 1/500
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:apply_halftone:value={1},time=0".format(device_id, halftone_val))
+
+def change_solarize(id, seekbar_val):
+    solarize_val = seekbar_val/ 255.0
+    device_id = devices_list[id]
+    brew.publish("Send Command", "{0}:apply_solarize:value={1},time=0".format(device_id, solarize_val))
 
 def unknown_command(id, command):
     print("Received unknown command: " + command)
